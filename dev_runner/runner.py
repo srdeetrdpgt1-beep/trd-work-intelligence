@@ -170,6 +170,39 @@ def process_queue_task(task_path: Path) -> dict:
 
         return result_payload
 
+    if task.operation == "CREATE_FILE":
+        metadata = task.metadata or {}
+
+        file_path = metadata.get("file_path")
+        content = metadata.get("content")
+
+        if not isinstance(file_path, str):
+            raise ValueError("CREATE_FILE requires metadata.file_path")
+
+        if not isinstance(content, str):
+            raise ValueError("CREATE_FILE requires metadata.content")
+
+        target_path = validate_repository_path(file_path)
+
+        if target_path.exists():
+            raise FileExistsError(
+                f"File already exists: {file_path}"
+            )
+
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(content, encoding="utf-8")
+
+        result_payload = {
+            "task_id": task.task_id,
+            "status": "PASSED",
+            "operation": "CREATE_FILE",
+            "file_path": file_path,
+        }
+
+        save_task_result(task_path, result_payload)
+
+        return result_payload
+
     if task.operation != "RUN_TESTS":
         raise ValueError(
             f"Operation not permitted: {task.operation}"
