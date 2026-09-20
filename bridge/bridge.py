@@ -71,25 +71,33 @@ def read_result(task_id: str) -> dict:
         return json.load(handle)
 
 
-def main() -> None:
-    if len(sys.argv) != 2:
-        raise SystemExit(
-            "Usage: python -m bridge.bridge '<task-json>'"
-        )
-
-    task = json.loads(sys.argv[1])
-    task_id = task.get("task_id")
-
+def handle_request(task: dict) -> dict:
     task_path = submit_task(task)
-
-    print(f"TASK_SUBMITTED: {task_path}")
-
     run_runner()
+    result = read_result(task["task_id"])
 
-    result = read_result(task_id)
+    return {
+        "task_path": str(task_path),
+        "result": result,
+    }
 
-    print("TASK_RESULT:")
-    print(json.dumps(result, indent=2))
+
+def main() -> None:
+    request = json.load(sys.stdin)
+
+    try:
+        response = handle_request(request)
+        print(json.dumps(response))
+    except Exception as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "ERROR",
+                    "error": str(exc),
+                }
+            )
+        )
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
