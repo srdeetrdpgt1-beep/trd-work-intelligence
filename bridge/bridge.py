@@ -56,6 +56,7 @@ def run_runner() -> None:
         [sys.executable, "-m", "dev_runner.runner"],
         cwd=BASE_DIR,
         check=True,
+        stdout=sys.stderr,
     )
 
 

@@ -10,3 +10,6 @@ venv/
 *.sqlite3
 logs/*
 .DS_Store
+
+# Node dependencies
+bridge/mcp/node_modules/
