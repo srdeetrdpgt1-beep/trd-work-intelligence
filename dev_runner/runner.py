@@ -223,6 +223,43 @@ def process_queue_task(task_path: Path) -> dict:
 
         return result_payload
 
+    if task.operation == "UPDATE_FILE":
+        metadata = task.metadata or {}
+
+        file_path = metadata.get("file_path")
+        content = metadata.get("content")
+
+        if not isinstance(file_path, str):
+            raise ValueError("UPDATE_FILE requires metadata.file_path")
+
+        if not isinstance(content, str):
+            raise ValueError("UPDATE_FILE requires metadata.content")
+
+        target_path = validate_repository_path(file_path)
+
+        if not target_path.exists():
+            raise FileNotFoundError(
+                f"File does not exist: {file_path}"
+            )
+
+        if not target_path.is_file():
+            raise ValueError(
+                f"Path is not a file: {file_path}"
+            )
+
+        target_path.write_text(content, encoding="utf-8")
+
+        result_payload = {
+            "task_id": task.task_id,
+            "status": "PASSED",
+            "operation": "UPDATE_FILE",
+            "file_path": file_path,
+        }
+
+        save_task_result(task_path, result_payload)
+
+        return result_payload
+
     if task.operation != "RUN_TESTS":
         raise ValueError(
             f"Operation not permitted: {task.operation}"

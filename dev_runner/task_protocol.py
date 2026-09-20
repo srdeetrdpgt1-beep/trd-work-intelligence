@@ -9,6 +9,7 @@ ALLOWED_OPERATIONS = {
     "GIT_STATUS",
     "GIT_DIFF",
     "CREATE_FILE",
+    "UPDATE_FILE",
 }
 
 
