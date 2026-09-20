@@ -326,6 +326,94 @@ def process_queue_task(task_path: Path) -> dict:
 
         return result_payload
 
+    if task.operation == "APPLY_PATCH_AND_TEST":
+        metadata = task.metadata or {}
+
+        file_path = metadata.get("file_path")
+        expected_content = metadata.get("expected_content")
+        replacement_content = metadata.get("replacement_content")
+
+        if not isinstance(file_path, str):
+            raise ValueError(
+                "APPLY_PATCH_AND_TEST requires metadata.file_path"
+            )
+
+        if not isinstance(expected_content, str):
+            raise ValueError(
+                "APPLY_PATCH_AND_TEST requires "
+                "metadata.expected_content"
+            )
+
+        if not isinstance(replacement_content, str):
+            raise ValueError(
+                "APPLY_PATCH_AND_TEST requires "
+                "metadata.replacement_content"
+            )
+
+        target_path = validate_repository_path(file_path)
+
+        if not target_path.exists():
+            raise FileNotFoundError(
+                f"File does not exist: {file_path}"
+            )
+
+        if not target_path.is_file():
+            raise ValueError(
+                f"Path is not a file: {file_path}"
+            )
+
+        original_content = target_path.read_text(encoding="utf-8")
+        match_count = original_content.count(expected_content)
+
+        if match_count == 0:
+            raise ValueError(
+                f"Expected content was not found in: {file_path}"
+            )
+
+        if match_count > 1:
+            raise ValueError(
+                f"Expected content matched {match_count} times "
+                f"in: {file_path}; patch is ambiguous"
+            )
+
+        patched_content = original_content.replace(
+            expected_content,
+            replacement_content,
+            1,
+        )
+
+        target_path.write_text(
+            patched_content,
+            encoding="utf-8",
+        )
+
+        test_result = run_tests()
+
+        if not test_result.passed:
+            target_path.write_text(
+                original_content,
+                encoding="utf-8",
+            )
+
+        result_payload = {
+            "task_id": task.task_id,
+            "status": "PASSED" if test_result.passed else "FAILED",
+            "operation": "APPLY_PATCH_AND_TEST",
+            "file_path": file_path,
+            "rollback": not test_result.passed,
+            "test_result": {
+                "command": test_result.command,
+                "exit_code": test_result.exit_code,
+                "passed": test_result.passed,
+                "stdout": test_result.stdout,
+                "stderr": test_result.stderr,
+            },
+        }
+
+        save_task_result(task_path, result_payload)
+
+        return result_payload
+
     if task.operation != "RUN_TESTS":
         raise ValueError(
             f"Operation not permitted: {task.operation}"
