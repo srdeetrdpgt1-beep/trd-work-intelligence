@@ -6,6 +6,7 @@ from typing import Any
 
 ALLOWED_OPERATIONS = {
     "RUN_TESTS",
+    "GIT_STATUS",
 }
 
 
