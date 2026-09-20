@@ -10,7 +10,7 @@ from dev_runner.task_protocol import QueueTask
 
 
 BASE_DIR = Path(__file__).resolve().parent
-PENDING_DIR = BASE_DIR / "tasks" / "pending"
+INBOX_DIR = BASE_DIR / "tasks" / "inbox"
 COMPLETED_DIR = BASE_DIR / "tasks" / "completed"
 RESULTS_DIR = BASE_DIR / "tasks" / "results"
 
@@ -152,9 +152,9 @@ def process_queue_task(task_path: Path) -> dict:
 
 
 def process_pending_tasks() -> list[dict]:
-    PENDING_DIR.mkdir(parents=True, exist_ok=True)
+    INBOX_DIR.mkdir(parents=True, exist_ok=True)
 
-    task_files = sorted(PENDING_DIR.glob("*.json"))
+    task_files = sorted(INBOX_DIR.glob("*.json"))
 
     results = []
 
