@@ -75,6 +75,20 @@ def run_tests() -> TestResult:
     )
 
 
+def save_task_result(task_path: Path, result_payload: dict) -> None:
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    COMPLETED_DIR.mkdir(parents=True, exist_ok=True)
+
+    task_id = result_payload.get("task_id", task_path.stem)
+    result_path = RESULTS_DIR / f"{task_id}.json"
+
+    with result_path.open("w", encoding="utf-8") as handle:
+        json.dump(result_payload, handle, indent=2)
+
+    completed_path = COMPLETED_DIR / task_path.name
+    shutil.move(str(task_path), str(completed_path))
+
+
 def execute_task(task: DevelopmentTask) -> DevelopmentResult:
     try:
         test_result = run_tests()
@@ -117,16 +131,7 @@ def process_queue_task(task_path: Path) -> dict:
             "git_status": result,
         }
 
-        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-        COMPLETED_DIR.mkdir(parents=True, exist_ok=True)
-
-        result_path = RESULTS_DIR / f"{task.task_id}.json"
-
-        with result_path.open("w", encoding="utf-8") as handle:
-            json.dump(result_payload, handle, indent=2)
-
-        completed_path = COMPLETED_DIR / task_path.name
-        shutil.move(str(task_path), str(completed_path))
+        save_task_result(task_path, result_payload)
 
         return result_payload
 
@@ -140,16 +145,7 @@ def process_queue_task(task_path: Path) -> dict:
             "git_diff": result,
         }
 
-        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-        COMPLETED_DIR.mkdir(parents=True, exist_ok=True)
-
-        result_path = RESULTS_DIR / f"{task.task_id}.json"
-
-        with result_path.open("w", encoding="utf-8") as handle:
-            json.dump(result_payload, handle, indent=2)
-
-        completed_path = COMPLETED_DIR / task_path.name
-        shutil.move(str(task_path), str(completed_path))
+        save_task_result(task_path, result_payload)
 
         return result_payload
 
