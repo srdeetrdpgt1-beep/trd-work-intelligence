@@ -23,6 +23,25 @@ def run(command: list[str]) -> str:
     return output
 
 
+def remote_is_ahead() -> bool:
+    run(["git", "fetch", "origin", "main"])
+
+    result = subprocess.run(
+        ["git", "rev-list", "--count", "HEAD..origin/main"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"Unable to compare local and remote commits:\n"
+            f"{result.stderr.strip()}"
+        )
+
+    return int(result.stdout.strip()) > 0
+
+
 def main() -> None:
     print("=== TRD Development Runner ===")
     print()
@@ -37,6 +56,12 @@ def main() -> None:
     print()
     print("Python:")
     print(sys.version.split()[0])
+    print()
+    print("Checking GitHub...")
+    print(
+        "Remote status:",
+        "NEW COMMITS AVAILABLE" if remote_is_ahead() else "Up to date",
+    )
 
 
 if __name__ == "__main__":
