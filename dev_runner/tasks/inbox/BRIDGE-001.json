@@ -1,0 +1,9 @@
+{
+  "task_id": "BRIDGE-001",
+  "operation": "RUN_TESTS",
+  "description": "Validate the GitHub-to-Ubuntu development task bridge",
+  "requested_by": "chatgpt",
+  "metadata": {
+    "purpose": "github-bridge-validation"
+  }
+}
