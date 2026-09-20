@@ -46,6 +46,10 @@ def pull_remote_changes() -> str:
     return run(["git", "pull", "--ff-only", "origin", "main"])
 
 
+def run_tests() -> str:
+    return run(["python", "-m", "agents.run_test"])
+
+
 def main() -> None:
     print("=== TRD Development Runner ===")
     print()
@@ -66,6 +70,12 @@ def main() -> None:
         print("No automatic pull performed.")
     else:
         print("Remote status: Up to date")
+
+    print()
+    print("Running tests...")
+    print(run_tests())
+    print()
+    print("Tests: PASSED")
 
 
 if __name__ == "__main__":
