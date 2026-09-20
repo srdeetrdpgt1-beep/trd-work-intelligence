@@ -130,6 +130,29 @@ def process_queue_task(task_path: Path) -> dict:
 
         return result_payload
 
+    if task.operation == "GIT_DIFF":
+        result = run(["git", "diff", "--"])
+
+        result_payload = {
+            "task_id": task.task_id,
+            "status": "PASSED",
+            "operation": "GIT_DIFF",
+            "git_diff": result,
+        }
+
+        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        COMPLETED_DIR.mkdir(parents=True, exist_ok=True)
+
+        result_path = RESULTS_DIR / f"{task.task_id}.json"
+
+        with result_path.open("w", encoding="utf-8") as handle:
+            json.dump(result_payload, handle, indent=2)
+
+        completed_path = COMPLETED_DIR / task_path.name
+        shutil.move(str(task_path), str(completed_path))
+
+        return result_payload
+
     if task.operation != "RUN_TESTS":
         raise ValueError(
             f"Operation not permitted: {task.operation}"
