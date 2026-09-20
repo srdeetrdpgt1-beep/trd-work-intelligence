@@ -260,6 +260,72 @@ def process_queue_task(task_path: Path) -> dict:
 
         return result_payload
 
+    if task.operation == "APPLY_PATCH":
+        metadata = task.metadata or {}
+
+        file_path = metadata.get("file_path")
+        expected_content = metadata.get("expected_content")
+        replacement_content = metadata.get("replacement_content")
+
+        if not isinstance(file_path, str):
+            raise ValueError("APPLY_PATCH requires metadata.file_path")
+
+        if not isinstance(expected_content, str):
+            raise ValueError(
+                "APPLY_PATCH requires metadata.expected_content"
+            )
+
+        if not isinstance(replacement_content, str):
+            raise ValueError(
+                "APPLY_PATCH requires metadata.replacement_content"
+            )
+
+        target_path = validate_repository_path(file_path)
+
+        if not target_path.exists():
+            raise FileNotFoundError(
+                f"File does not exist: {file_path}"
+            )
+
+        if not target_path.is_file():
+            raise ValueError(
+                f"Path is not a file: {file_path}"
+            )
+
+        current_content = target_path.read_text(encoding="utf-8")
+        match_count = current_content.count(expected_content)
+
+        if match_count == 0:
+            raise ValueError(
+                f"Expected content was not found in: {file_path}"
+            )
+
+        if match_count > 1:
+            raise ValueError(
+                f"Expected content matched {match_count} times in: {file_path}; "
+                "patch is ambiguous"
+            )
+
+        target_path.write_text(
+            current_content.replace(
+                expected_content,
+                replacement_content,
+                1,
+            ),
+            encoding="utf-8",
+        )
+
+        result_payload = {
+            "task_id": task.task_id,
+            "status": "PASSED",
+            "operation": "APPLY_PATCH",
+            "file_path": file_path,
+        }
+
+        save_task_result(task_path, result_payload)
+
+        return result_payload
+
     if task.operation != "RUN_TESTS":
         raise ValueError(
             f"Operation not permitted: {task.operation}"

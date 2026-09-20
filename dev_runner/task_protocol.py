@@ -10,6 +10,7 @@ ALLOWED_OPERATIONS = {
     "GIT_DIFF",
     "CREATE_FILE",
     "UPDATE_FILE",
+    "APPLY_PATCH",
 }
 
 
