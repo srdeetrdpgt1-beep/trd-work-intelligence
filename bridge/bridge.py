@@ -8,6 +8,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 INBOX_DIR = BASE_DIR / "dev_runner" / "tasks" / "inbox"
+RESULTS_DIR = BASE_DIR / "dev_runner" / "tasks" / "results"
 
 ALLOWED_OPERATIONS = {
     "RUN_TESTS",
@@ -58,6 +59,18 @@ def run_runner() -> None:
     )
 
 
+def read_result(task_id: str) -> dict:
+    result_path = RESULTS_DIR / f"{task_id}.json"
+
+    if not result_path.exists():
+        raise FileNotFoundError(
+            f"Result not found for task: {task_id}"
+        )
+
+    with result_path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit(
@@ -65,11 +78,18 @@ def main() -> None:
         )
 
     task = json.loads(sys.argv[1])
+    task_id = task.get("task_id")
+
     task_path = submit_task(task)
 
     print(f"TASK_SUBMITTED: {task_path}")
 
     run_runner()
+
+    result = read_result(task_id)
+
+    print("TASK_RESULT:")
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
