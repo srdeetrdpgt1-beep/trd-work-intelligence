@@ -110,6 +110,26 @@ def save_task_result(task_path: Path, result_payload: dict) -> None:
     shutil.move(str(task_path), str(completed_path))
 
 
+def save_task_error(task_path: Path, error: Exception) -> dict:
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    COMPLETED_DIR.mkdir(parents=True, exist_ok=True)
+
+    result_payload = {
+        "task_id": task_path.stem,
+        "status": "ERROR",
+        "error": str(error),
+    }
+
+    result_path = RESULTS_DIR / f"{task_path.stem}.json"
+    with result_path.open("w", encoding="utf-8") as handle:
+        json.dump(result_payload, handle, indent=2)
+
+    completed_path = COMPLETED_DIR / task_path.name
+    shutil.move(str(task_path), str(completed_path))
+
+    return result_payload
+
+
 def execute_task(task: DevelopmentTask) -> DevelopmentResult:
     try:
         test_result = run_tests()
@@ -258,13 +278,7 @@ def process_pending_tasks() -> list[dict]:
         try:
             results.append(process_queue_task(task_path))
         except Exception as exc:
-            results.append(
-                {
-                    "task_file": task_path.name,
-                    "status": "ERROR",
-                    "error": str(exc),
-                }
-            )
+            results.append(save_task_error(task_path, exc))
 
     return results
 
