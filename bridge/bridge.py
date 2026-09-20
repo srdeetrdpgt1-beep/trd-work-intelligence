@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 INBOX_DIR = BASE_DIR / "dev_runner" / "tasks" / "inbox"
-
 
 ALLOWED_OPERATIONS = {
     "RUN_TESTS",
@@ -29,9 +29,7 @@ def submit_task(task: dict) -> Path:
         raise ValueError("task_id is required")
 
     if operation not in ALLOWED_OPERATIONS:
-        raise ValueError(
-            f"Unsupported operation: {operation}"
-        )
+        raise ValueError(f"Unsupported operation: {operation}")
 
     if not isinstance(description, str) or not description:
         raise ValueError("description is required")
@@ -44,14 +42,20 @@ def submit_task(task: dict) -> Path:
     task_path = INBOX_DIR / f"{task_id}.json"
 
     if task_path.exists():
-        raise FileExistsError(
-            f"Task already exists: {task_id}"
-        )
+        raise FileExistsError(f"Task already exists: {task_id}")
 
     with task_path.open("w", encoding="utf-8") as handle:
         json.dump(task, handle, indent=2)
 
     return task_path
+
+
+def run_runner() -> None:
+    subprocess.run(
+        [sys.executable, "-m", "dev_runner.runner"],
+        cwd=BASE_DIR,
+        check=True,
+    )
 
 
 def main() -> None:
@@ -64,6 +68,8 @@ def main() -> None:
     task_path = submit_task(task)
 
     print(f"TASK_SUBMITTED: {task_path}")
+
+    run_runner()
 
 
 if __name__ == "__main__":
