@@ -13,6 +13,27 @@ BASE_DIR = Path(__file__).resolve().parent
 INBOX_DIR = BASE_DIR / "tasks" / "inbox"
 COMPLETED_DIR = BASE_DIR / "tasks" / "completed"
 RESULTS_DIR = BASE_DIR / "tasks" / "results"
+REPOSITORY_ROOT = BASE_DIR.parent
+
+
+def validate_repository_path(relative_path: str) -> Path:
+    if not relative_path:
+        raise ValueError("file path is required")
+
+    candidate = (REPOSITORY_ROOT / relative_path).resolve()
+    repository_root = REPOSITORY_ROOT.resolve()
+
+    try:
+        candidate.relative_to(repository_root)
+    except ValueError as exc:
+        raise ValueError(
+            f"Path is outside repository: {relative_path}"
+        ) from exc
+
+    if ".git" in candidate.relative_to(repository_root).parts:
+        raise ValueError("Modifying .git paths is not permitted")
+
+    return candidate
 
 
 def run(command: list[str]) -> str:

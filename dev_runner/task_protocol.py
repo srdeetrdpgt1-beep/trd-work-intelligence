@@ -8,6 +8,7 @@ ALLOWED_OPERATIONS = {
     "RUN_TESTS",
     "GIT_STATUS",
     "GIT_DIFF",
+    "CREATE_FILE",
 }
 
 
