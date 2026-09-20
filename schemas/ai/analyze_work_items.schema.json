@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Analyze Work Items",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "processing_version",
+    "decision",
+    "confidence",
+    "needs_human_review",
+    "work_items",
+    "evidence_refs"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "processing_version": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "PROCESSED",
+        "UNCERTAIN",
+        "HUMAN_REVIEW"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "needs_human_review": {
+      "type": "boolean"
+    },
+    "work_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "work_item_id",
+          "description",
+          "trd_relationship"
+        ],
+        "properties": {
+          "work_item_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "trd_relationship": {
+            "type": "string",
+            "enum": [
+              "DIRECT_TRD_CASE",
+              "TRD_DEPENDENCY",
+              "CROSS_DEPARTMENT",
+              "NON_TRD",
+              "UNCERTAIN"
+            ]
+          },
+          "primary_department": {
+            "type": "string"
+          },
+          "secondary_departments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "location": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "actions": {
+            "type": "array"
+          },
+          "dependencies": {
+            "type": "array"
+          },
+          "facts": {
+            "type": "array"
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}
