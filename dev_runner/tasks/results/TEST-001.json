@@ -1,0 +1,16 @@
+{
+  "task_id": "TEST-001",
+  "status": "PASSED",
+  "error": null,
+  "test_result": {
+    "command": [
+      "python",
+      "-m",
+      "agents.run_test"
+    ],
+    "exit_code": 0,
+    "passed": true,
+    "stdout": "Registered agents: ['test-agent']\nAgent: test-agent\nDecision: TEST_OK\nConfidence: 1.0\nHuman review: False\nData: {'echo': {'message': 'TRD system test'}}",
+    "stderr": ""
+  }
+}

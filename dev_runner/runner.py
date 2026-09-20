@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import json
+import shutil
 import subprocess
-import sys
+from pathlib import Path
 
 from dev_runner.protocol import DevelopmentResult, DevelopmentTask, TestResult
+from dev_runner.task_protocol import QueueTask
+
+
+BASE_DIR = Path(__file__).resolve().parent
+PENDING_DIR = BASE_DIR / "tasks" / "pending"
+COMPLETED_DIR = BASE_DIR / "tasks" / "completed"
+RESULTS_DIR = BASE_DIR / "tasks" / "results"
 
 
 def run(command: list[str]) -> str:
@@ -37,7 +46,7 @@ def remote_is_ahead() -> bool:
 
     if result.returncode != 0:
         raise RuntimeError(
-            f"Unable to compare local and remote commits:\n"
+            "Unable to compare local and remote commits:\n"
             f"{result.stderr.strip()}"
         )
 
@@ -84,14 +93,89 @@ def execute_task(task: DevelopmentTask) -> DevelopmentResult:
         )
 
 
+def process_queue_task(task_path: Path) -> dict:
+    with task_path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    task = QueueTask(
+        task_id=payload.get("task_id", ""),
+        operation=payload.get("operation", ""),
+        description=payload.get("description", ""),
+        requested_by=payload.get("requested_by", "unknown"),
+        metadata=payload.get("metadata"),
+    )
+
+    task.validate()
+
+    if task.operation != "RUN_TESTS":
+        raise ValueError(
+            f"Operation not permitted: {task.operation}"
+        )
+
+    development_task = DevelopmentTask(
+        task_id=task.task_id,
+        description=task.description,
+        requested_by=task.requested_by,
+        metadata=task.metadata or {},
+    )
+
+    result = execute_task(development_task)
+
+    result_payload = {
+        "task_id": result.task_id,
+        "status": result.status,
+        "error": result.error,
+        "test_result": None,
+    }
+
+    if result.test_result is not None:
+        result_payload["test_result"] = {
+            "command": result.test_result.command,
+            "exit_code": result.test_result.exit_code,
+            "passed": result.test_result.passed,
+            "stdout": result.test_result.stdout,
+            "stderr": result.test_result.stderr,
+        }
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    COMPLETED_DIR.mkdir(parents=True, exist_ok=True)
+
+    result_path = RESULTS_DIR / f"{task.task_id}.json"
+
+    with result_path.open("w", encoding="utf-8") as handle:
+        json.dump(result_payload, handle, indent=2)
+
+    completed_path = COMPLETED_DIR / task_path.name
+    shutil.move(str(task_path), str(completed_path))
+
+    return result_payload
+
+
+def process_pending_tasks() -> list[dict]:
+    PENDING_DIR.mkdir(parents=True, exist_ok=True)
+
+    task_files = sorted(PENDING_DIR.glob("*.json"))
+
+    results = []
+
+    for task_path in task_files:
+        try:
+            results.append(process_queue_task(task_path))
+        except Exception as exc:
+            results.append(
+                {
+                    "task_file": task_path.name,
+                    "status": "ERROR",
+                    "error": str(exc),
+                }
+            )
+
+    return results
+
+
 def main() -> None:
     print("=== TRD Development Runner ===")
     print()
-
-    task = DevelopmentTask(
-        task_id="DEV-RUNNER-001",
-        description="Run the TRD development test suite",
-    )
 
     print("Branch:")
     print(run(["git", "branch", "--show-current"]))
@@ -114,31 +198,18 @@ def main() -> None:
         print("Remote status: Up to date")
 
     print()
-    print("Executing task:", task.task_id)
+    print("Checking development task queue...")
 
-    result = execute_task(task)
+    results = process_pending_tasks()
 
-    print()
-    print("=== DEVELOPMENT RESULT ===")
-    print("Task ID:", result.task_id)
-    print("Status:", result.status)
+    if not results:
+        print("Queue status: No pending tasks")
+    else:
+        print(f"Processed tasks: {len(results)}")
 
-    if result.test_result is not None:
-        print("Command:", " ".join(result.test_result.command))
-        print("Exit code:", result.test_result.exit_code)
-
-        if result.test_result.stdout:
+        for result in results:
             print()
-            print("Output:")
-            print(result.test_result.stdout)
-
-        if result.test_result.stderr:
-            print()
-            print("Errors:")
-            print(result.test_result.stderr)
-
-    if result.error:
-        print("Error:", result.error)
+            print(json.dumps(result, indent=2))
 
     print()
     print("=== END ===")

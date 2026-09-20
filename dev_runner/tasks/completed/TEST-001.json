@@ -1,0 +1,9 @@
+{
+  "task_id": "TEST-001",
+  "operation": "RUN_TESTS",
+  "description": "Run the TRD development test suite",
+  "requested_by": "chatgpt",
+  "metadata": {
+    "purpose": "bridge-validation"
+  }
+}
