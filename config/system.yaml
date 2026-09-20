@@ -1,0 +1,31 @@
+system:
+  name: trd-work-intelligence
+  version: 0.1.0
+  environment: development
+  timezone: Asia/Kolkata
+
+architecture:
+  local_first: true
+  portable: true
+  modular_agents: true
+  external_services_replaceable: true
+
+safety:
+  human_verification_required_for_critical_operations: true
+  autonomous_operational_authorization: false
+  automatic_case_closure: false
+
+storage:
+  primary_database: sqlite
+  evidence_storage: external
+  audit_log: append_only
+
+integrations:
+  make:
+    enabled: false
+  google_drive:
+    enabled: false
+  google_sheets:
+    enabled: false
+  whatsapp:
+    enabled: false
