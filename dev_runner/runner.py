@@ -46,8 +46,23 @@ def pull_remote_changes() -> str:
     return run(["git", "pull", "--ff-only", "origin", "main"])
 
 
-def run_tests() -> str:
-    return run(["python", "-m", "agents.run_test"])
+def run_tests() -> dict[str, object]:
+    command = ["python", "-m", "agents.run_test"]
+
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    return {
+        "command": command,
+        "exit_code": result.returncode,
+        "stdout": result.stdout.strip(),
+        "stderr": result.stderr.strip(),
+        "passed": result.returncode == 0,
+    }
 
 
 def main() -> None:
@@ -73,9 +88,29 @@ def main() -> None:
 
     print()
     print("Running tests...")
-    print(run_tests())
+
+    test_result = run_tests()
+
+    print("Test command:", " ".join(test_result["command"]))
+    print("Exit code:", test_result["exit_code"])
+
+    if test_result["stdout"]:
+        print()
+        print("Test output:")
+        print(test_result["stdout"])
+
+    if test_result["stderr"]:
+        print()
+        print("Test errors:")
+        print(test_result["stderr"])
+
     print()
-    print("Tests: PASSED")
+
+    if test_result["passed"]:
+        print("Tests: PASSED")
+    else:
+        print("Tests: FAILED")
+        raise SystemExit(test_result["exit_code"])
 
 
 if __name__ == "__main__":
