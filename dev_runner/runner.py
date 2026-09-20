@@ -42,6 +42,10 @@ def remote_is_ahead() -> bool:
     return int(result.stdout.strip()) > 0
 
 
+def pull_remote_changes() -> str:
+    return run(["git", "pull", "--ff-only", "origin", "main"])
+
+
 def main() -> None:
     print("=== TRD Development Runner ===")
     print()
@@ -54,14 +58,14 @@ def main() -> None:
     print("Latest commit:")
     print(run(["git", "log", "-1", "--oneline"]))
     print()
-    print("Python:")
-    print(sys.version.split()[0])
-    print()
     print("Checking GitHub...")
-    print(
-        "Remote status:",
-        "NEW COMMITS AVAILABLE" if remote_is_ahead() else "Up to date",
-    )
+
+    if remote_is_ahead():
+        print("Remote status: NEW COMMITS AVAILABLE")
+        print()
+        print("No automatic pull performed.")
+    else:
+        print("Remote status: Up to date")
 
 
 if __name__ == "__main__":
